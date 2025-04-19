@@ -1,0 +1,36 @@
+{
+  "name": "vite-dynamic-pages-router",
+  "version": "1.0.0",
+  "description": "Automatic and modular page routing system for Vite + React apps using per-page settings and dynamic import.meta.glob.",
+  "main": "index.js",
+  "module": "index.js",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "require": "./index.js"
+    }
+  },
+  "keywords": [
+    "vite",
+    "react",
+    "router",
+    "routing",
+    "pages",
+    "dynamic",
+    "auto-import",
+    "vite-plugin",
+    "vite-pages",
+    "vite-react-router"
+  ],
+  "type": "module",
+  "author": "Vlad Albu (OxiJenuuu)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oxijenuuu/vite-dynamic-pages-router.git"
+  },
+  "bugs": {
+    "url": "https://github.com/oxijenuuu/vite-dynamic-pages-router/issues"
+  },
+  "homepage": "https://github.com/oxijenuuu/vite-dynamic-pages-router#readme"
+}
