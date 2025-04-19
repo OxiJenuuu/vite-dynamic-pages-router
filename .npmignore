@@ -1,0 +1,10 @@
+node_modules/
+package-lock.json
+.git/
+.gitignore
+README.md~
+vite.config.js
+rollup.config.js
+*.test.js
+tests/
+example/
