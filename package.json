@@ -1,6 +1,6 @@
 {
   "name": "vite-dynamic-pages-router",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Automatic and modular page routing system for Vite + React apps using per-page settings and dynamic import.meta.glob.",
   "main": "index.js",
   "module": "index.js",

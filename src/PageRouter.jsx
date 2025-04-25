@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 export function PageRouter({ pages }) {
   const routes = [];
-  let notFoundElement = null;
+  const errorRoutes = {};
   let hasRoot = false;
 
   for (const path in pages) {
@@ -15,21 +15,32 @@ export function PageRouter({ pages }) {
     const rawPath = path
       .replace("./", "")
       .replace(/\.jsx$/, "")
+      .replace(/^pages\//, "")
       .replace(/\/index$/, "");
 
-    const label = settings.label || rawPath;
+    const folderPath = rawPath.split("/").slice(0, -1).join("/");
+    const fileName = rawPath.split("/").pop();
 
-    // Verificăm dacă e pagina principală
-    const isRoot = label === "/" || rawPath === "index";
+    const label = settings.label || fileName;
 
-    const routePath = isRoot || settings.tab ? "/" : `/${label}`;
-    if (isRoot) hasRoot = true;
+    const routePath =
+      label === "/" || rawPath === "index"
+        ? "/"
+        : `/${[folderPath, label].filter(Boolean).join("/")}`;
 
     const element = <Component />;
 
-    if (settings.notFound) {
-      notFoundElement = element;
+    if (settings.errorType) {
+      errorRoutes[settings.errorType] = element;
+      routes.push(
+        <Route
+          path={`/__error/${settings.errorType}`}
+          element={element}
+          key={`__error-${settings.errorType}`}
+        />
+      );
     } else {
+      if (label === "/" && !settings.errorType) hasRoot = true;
       routes.push(<Route path={routePath} element={element} key={routePath} />);
     }
   }
@@ -37,9 +48,8 @@ export function PageRouter({ pages }) {
   return (
     <Routes>
       {routes}
-
-      {notFoundElement ? (
-        <Route path="*" element={notFoundElement} key="not-found" />
+      {errorRoutes["404"] ? (
+        <Route path="*" element={errorRoutes["404"]} />
       ) : hasRoot ? (
         <Route path="*" element={<Navigate to="/" />} />
       ) : null}
