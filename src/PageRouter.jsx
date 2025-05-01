@@ -17,7 +17,6 @@ export function PageRouter({ pages }) {
         const Component = page.default;
         const settings = page.settings || {};
 
-        // Evaluate access
         let isAccessible = false;
         if (typeof settings.access === "function") {
           try {
