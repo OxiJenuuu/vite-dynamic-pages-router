@@ -1,49 +1,81 @@
+import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 export function PageRouter({ pages }) {
-  const routes = [];
-  const errorRoutes = {};
-  let hasRoot = false;
+  const [routes, setRoutes] = useState([]);
+  const [errorRoutes, setErrorRoutes] = useState({});
+  const [hasRoot, setHasRoot] = useState(false);
 
-  for (const path in pages) {
-    const page = pages[path];
-    const Component = page.default;
-    const settings = page.settings || {};
+  useEffect(() => {
+    const loadRoutes = async () => {
+      const dynamicRoutes = [];
+      const errors = {};
+      let rootExists = false;
 
-    if (settings?.access !== true) continue;
+      for (const path in pages) {
+        const page = pages[path];
+        const Component = page.default;
+        const settings = page.settings || {};
 
-    const rawPath = path
-      .replace("./", "")
-      .replace(/\.jsx$/, "")
-      .replace(/^pages\//, "")
-      .replace(/\/index$/, "");
+        // Evaluate access
+        let isAccessible = false;
+        if (typeof settings.access === "function") {
+          try {
+            isAccessible = await settings.access();
+          } catch {
+            isAccessible = false;
+          }
+        } else {
+          isAccessible = settings.access === true;
+        }
 
-    const folderPath = rawPath.split("/").slice(0, -1).join("/");
-    const fileName = rawPath.split("/").pop();
+        const rawPath = path
+          .replace("./", "")
+          .replace(/\.jsx$/, "")
+          .replace(/^pages\//, "")
+          .replace(/\/index$/, "");
 
-    const label = settings.label || fileName;
+        const folderPath = rawPath.split("/").slice(0, -1).join("/");
+        const fileName = rawPath.split("/").pop();
 
-    const routePath =
-      label === "/" || rawPath === "index"
-        ? "/"
-        : `/${[folderPath, label].filter(Boolean).join("/")}`;
+        const label = settings.label || fileName;
 
-    const element = <Component />;
+        const routePath =
+          label === "/" || rawPath === "index"
+            ? "/"
+            : `/${[folderPath, label].filter(Boolean).join("/")}`;
 
-    if (settings.errorType) {
-      errorRoutes[settings.errorType] = element;
-      routes.push(
-        <Route
-          path={`/__error/${settings.errorType}`}
-          element={element}
-          key={`__error-${settings.errorType}`}
-        />
-      );
-    } else {
-      if (label === "/" && !settings.errorType) hasRoot = true;
-      routes.push(<Route path={routePath} element={element} key={routePath} />);
-    }
-  }
+        const element = <Component />;
+
+        if (settings.errorType) {
+          errors[settings.errorType] = element;
+          dynamicRoutes.push(
+            <Route
+              path={`/__error/${settings.errorType}`}
+              element={element}
+              key={`__error-${settings.errorType}`}
+            />
+          );
+        } else {
+          if (label === "/" && !settings.errorType) rootExists = true;
+
+          dynamicRoutes.push(
+            <Route
+              path={routePath}
+              element={isAccessible ? element : <Navigate to="/__error/401" />}
+              key={routePath}
+            />
+          );
+        }
+      }
+
+      setRoutes(dynamicRoutes);
+      setErrorRoutes(errors);
+      setHasRoot(rootExists);
+    };
+
+    loadRoutes();
+  }, [pages]);
 
   return (
     <Routes>
