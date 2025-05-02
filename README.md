@@ -1,3 +1,4 @@
+````markdown
 # vite-dynamic-pages-router
 
 **Smart and automatic page-based routing system for React + Vite.**  
@@ -9,12 +10,13 @@ Just drop `.jsx` files in your `pages/` folder, export a `settings` object, and 
 
 - 🔄 Auto-imports all `.jsx` files inside `/pages/**`
 - 🧠 Per-page configuration via `settings`
-- 📁 Folder-based routing (with auto prefixing)
+- 📁 Folder-based routing with auto prefixing
 - 🧩 Optional tab rendering support
-- 🔐 Route-level access control
+- 🔐 Route-level access control (supports async functions)
 - ⚠️ Custom error pages (404, 500, 401, etc.) via `errorType`
-- 🌍 Global variable storage across all components (`globals`)
-- 🧼 No need for manual `react-router` routes
+- 🌍 Global variable storage accessible in both React and non-React code
+- 🧼 No need for manual `react-router` route setup
+- 🔁 Shortcut available: `npm i vdp-router` (alias package)
 
 ---
 
@@ -22,6 +24,12 @@ Just drop `.jsx` files in your `pages/` folder, export a `settings` object, and 
 
 ```bash
 npm install vite-dynamic-pages-router
+````
+
+or using the shortcut:
+
+```bash
+npm install vdp-router
 ```
 
 ---
@@ -34,11 +42,12 @@ src/
 ├── pages/
 │   ├── index.jsx             # Homepage
 │   ├── about.jsx             # /about
-│   ├── auth/
-│   │   └── login.jsx         # /auth/login
+│   ├── admin/
+│   │   └── panel.jsx         # /admin/panel
 │   └── errors/
 │       ├── Error404.jsx      # 404 page
-│       ├── Error500.jsx      # 500 page
+│       ├── Error401.jsx      # 401 page
+│       └── Error500.jsx      # 500 page
 └── ...
 ```
 
@@ -46,7 +55,7 @@ src/
 
 ## 🧩 Page Format
 
-Each page must export a default component and a `settings` object.
+Each page must export a default component and a `settings` object:
 
 ```jsx
 function Home() {
@@ -56,27 +65,27 @@ export default Home;
 
 export const settings = {
   access: true,
-  label: "/",      // Optional: default is filename
+  label: "/", // optional
 };
 ```
 
 ---
 
-## ⚙️ Available `settings`
+## ⚙️ Settings Reference
 
-| Setting      | Type    | Required | Description                                                                 |
-|--------------|---------|----------|-----------------------------------------------------------------------------|
-| `access`     | boolean | ✅ Yes    | Makes the page routable                                                     |
-| `label`      | string  | ❌ No     | URL path segment (defaults to file name)                                   |
-| `tab`        | boolean | ❌ No     | Marks the page as a tab (used with `getTabPages()`)                        |
-| `errorType`  | string  | ❌ No     | `"404"`, `"500"`, `"401"` — used to define custom error pages              |
+| Setting     | Type                    | Required | Description                                                           |
+| ----------- | ----------------------- | -------- | --------------------------------------------------------------------- |
+| `access`    | `boolean` \| `function` | ✅ Yes    | Enables the route. Supports async functions and global checks.        |
+| `label`     | string                  | ❌ No     | URL path. Defaults to the file name. Use `'/'` for homepage.          |
+| `tab`       | boolean                 | ❌ No     | Marks the page as a "tab" for tab rendering                           |
+| `errorType` | string                  | ❌ No     | One of `"404"`, `"500"`, `"401"` — used to define custom error pages. |
 
 ---
 
 ## 🧪 Usage in App.jsx
 
 ```jsx
-import { PageRouter } from "vite-dynamic-pages-router";
+import { PageRouter, PageGlobalsProvider } from "vite-dynamic-pages-router";
 import { BrowserRouter } from "react-router-dom";
 
 const pages = import.meta.glob("./pages/**/*.jsx", { eager: true });
@@ -84,7 +93,9 @@ const pages = import.meta.glob("./pages/**/*.jsx", { eager: true });
 function App() {
   return (
     <BrowserRouter>
-      <PageRouter pages={pages} />
+      <PageGlobalsProvider>
+        <PageRouter pages={pages} />
+      </PageGlobalsProvider>
     </BrowserRouter>
   );
 }
@@ -96,12 +107,11 @@ export default App;
 
 ## ⚠️ Error Pages
 
-To define a custom 404, 500, or 401 page, just add:
+Example 404 page:
 
 ```jsx
-// src/pages/errors/Error404.jsx
 function Error404() {
-  return <h1>404 - Page Not Found</h1>;
+  return <h1>404 - Not Found</h1>;
 }
 export default Error404;
 
@@ -111,48 +121,62 @@ export const settings = {
 };
 ```
 
-You can now also navigate programmatically to:
-
-```jsx
-navigate("/__error/500");
-navigate("/__error/401");
-```
+Pages with `errorType` are auto-routed as `/__error/404`, `/__error/401`, etc.
+They also work as automatic fallbacks when needed.
 
 ---
 
-## 🧠 Global Variables (`globals`)
+## 🌍 Global Variables
 
-Define global state/instances/objects once and access anywhere.
+You can set globals once and use them across all pages and logic.
 
-### ✅ Setup in App.jsx:
-
-```jsx
-import { PageGlobalsProvider } from "vite-dynamic-pages-router";
-
-<PageGlobalsProvider>
-  <PageRouter pages={pages} />
-</PageGlobalsProvider>
-```
-
-### ✅ In any component:
+### ✅ In React:
 
 ```jsx
 import { useGlobals } from "vite-dynamic-pages-router";
 
-// Set a global variable
 const { setGlobal } = useGlobals();
-setGlobal("user", new User(...));
+setGlobal("user", { id: 1, role: "admin" });
 
-// Get a global variable
 const { globals } = useGlobals();
 console.log(globals.user?.id);
 ```
 
+### ✅ Outside React (JS files):
+
+```js
+import { globalsStore } from "vite-dynamic-pages-router";
+
+const user = globalsStore.get("user");
+console.log(user?.role);
+```
+
+### ✅ Or use globalThis directly:
+
+```js
+globalThis.user = { id: 1, username: "oxijenuuu" };
+console.log(user.username);
+```
+
 ---
 
-## 🧩 Tabs (Optional)
+## 🔐 Access with async logic
 
-Mark pages with `tab: true` and use them as internal tab components.
+You can protect a page dynamically using async checks:
+
+```jsx
+export const settings = {
+  access: async () => {
+    await new Promise((res) => setTimeout(res, 100));
+    return user?.role === "admin";
+  },
+  label: "admin/panel",
+};
+```
+
+---
+
+## 🧩 Tabs Support (Optional)
 
 ```jsx
 export const settings = {
@@ -162,9 +186,9 @@ export const settings = {
 };
 ```
 
-Get tab pages:
+Fetch all tabs:
 
-```jsx
+```js
 import { getTabPages } from "vite-dynamic-pages-router";
 
 const tabPages = getTabPages(pages);
@@ -175,10 +199,10 @@ const tabPages = getTabPages(pages);
 
 ## 🛠️ Best Practices
 
-- Use `index.jsx` or `label: "/"` for homepage
-- Always set `access: true` for routable pages
-- Use `errorType` for consistent error handling
-- Keep `globals` clean and structured
+* Use `label: "/"` or `index.jsx` for homepage
+* Use `errorType` pages for better UX (404, 401, 500)
+* Set globals early using `globalThis` or `setGlobal()`
+* Use `async access` to protect sensitive routes
 
 ---
 
