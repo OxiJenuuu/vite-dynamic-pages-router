@@ -1,4 +1,3 @@
-````markdown
 # vite-dynamic-pages-router
 
 **Smart and automatic page-based routing system for React + Vite.**  
@@ -31,8 +30,6 @@ or using the shortcut:
 ```bash
 npm install vdp-router
 ```
-
----
 
 ## 🧱 File Structure Example
 
